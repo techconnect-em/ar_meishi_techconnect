@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-aframe.prod.js"></script>
+  <title>AR Meishi TechConnect</title>
+  <style>
+    body {
+      margin: 0;
+    }
+
+    .example-container {
+      overflow: hidden;
+      position: absolute;
+      width: 100%;
+      height: 100%;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="example-container">
+    <a-scene mindar-image="imageTargetSrc: ./assets/target.mind; autoStart: true;" color-space="sRGB"
+      renderer="colorManagement: true, physicallyCorrectLights" vr-mode-ui="enabled: false"
+      device-orientation-permission-ui="enabled: false">
+
+      <a-assets>
+        <img id="card-front" src="./assets/meishi_front.png" />
+        <img id="card-inside" src="./assets/meishi_inside.png" />
+        <!-- Video Asset -->
+        <video id="logo-video" src="./assets/logoanimation.mp4" crossorigin="anonymous" playsinline webkit-playsinline
+          muted></video>
+        <!-- Intro Assets -->
+        <img id="intro-profile" src="./assets/intro_profile.jpg" />
+        <img id="intro-name" src="./assets/intro_name.png" />
+        <img id="intro-job" src="./assets/intro_job.png" />
+        <img id="intro-catch" src="./assets/intro_catch.png" />
+      </a-assets>
+
+      <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+
+      <a-entity mindar-image-target="targetIndex: 0">
+
+        <!-- Container for the whole card -->
+        <a-entity position="0 0 0">
+
+          <!-- Base (Inside Content - Black Background for Hologram) -->
+          <a-plane id="base-card" position="0 0 0" width="1" height="0.6" material="color: #000; side: front">
+          </a-plane>
+
+          <!-- Logo Entity (Hologram style) - Video -->
+          <!-- Placed flat on the center of the opened card (y=0.3). -->
+          <!-- Appears after card opens. Moves up to header later. -->
+          <a-video id="logo" src="#logo-video" position="0 0.3 0.02" width="0.9" height="0.5" scale="0 0 0"
+            rotation="0 0 0"
+            animation__scale="property: scale; to: 1 1 1; dur: 1000; delay: 2500; easing: easeOutQuad; startEvents: open"
+            animation__move="property: position; to: 0 1.2 0.02; dur: 1000; easing: easeInOutQuad; startEvents: moveHeader"
+            material="opacity: 1; transparent: true;">
+          </a-video>
+
+          <!-- Intro Container (Hologram) -->
+          <!-- Initially invisible. Appears below header logo. -->
+          <!-- Moved higher for vertical stack. -->
+          <a-entity id="intro-container" position="0 0.1 0.05" opacity="0"
+            animation__fade="property: opacity; to: 1; dur: 1000; easing: linear; startEvents: showIntro"
+            animation__float="property: position; to: 0 0.15 0.05; dur: 2000; dir: alternate; loop: true; easing: easeInOutSine; startEvents: showIntro">
+
+            <!-- 1. Catchphrase (Top) -->
+            <!-- Aspect Ratio 1075:650 ~= 1.65 -->
+            <a-image src="#intro-catch" position="0 0.65 0" width="1.2" height="0.72" opacity="0"
+              material="transparent: true; alphaTest: 0.1"
+              animation="property: opacity; to: 1; dur: 1000; startEvents: showIntro">
+            </a-image>
+
+            <!-- 2. Job Title (Below Catch) -->
+            <a-image src="#intro-job" position="0 0.45 0" width="1.2" height="0.72" opacity="0"
+              material="transparent: true; alphaTest: 0.1"
+              animation="property: opacity; to: 1; dur: 1000; delay: 200; startEvents: showIntro">
+            </a-image>
+
+            <!-- 3. Profile Photo (Center) - Larger -->
+            <a-circle src="#intro-profile" position="0 0.1 0" radius="0.25" opacity="0"
+              animation="property: opacity; to: 1; dur: 1000; delay: 400; startEvents: showIntro">
+            </a-circle>
+
+            <!-- 4. Name (Bottom) -->
+            <a-image src="#intro-name" position="0 -0.25 0" width="1.2" height="0.72" opacity="0"
+              material="transparent: true; alphaTest: 0.1"
+              animation="property: opacity; to: 1; dur: 1000; delay: 600; startEvents: showIntro">
+            </a-image>
+
+          </a-entity>
+
+          <!-- Cover Container (Pivot at Top Edge: y = 0.3) -->
+          <a-entity id="cover-pivot" position="0 0.3 0" rotation="0 0 0"
+            animation="property: rotation; to: -180 0 0; dur: 2000; delay: 500; easing: easeOutQuad; loop: false; startEvents: open">
+
+            <!-- Cover Front (Outside) -->
+            <a-plane id="cover-front" position="0 -0.3 0.01" width="1" height="0.6"
+              material="src: #card-front; side: front">
+            </a-plane>
+
+            <!-- Cover Back (Inside - Black) -->
+            <a-plane id="cover-back" position="0 -0.3 0" width="1" height="0.6" rotation="0 180 0"
+              material="color: #000; side: front">
+            </a-plane>
+
+          </a-entity>
+
+        </a-entity>
+      </a-entity>
+    </a-scene>
+  </div>
+
+  <script src="./script.js"></script>
+</body>
+
+</html>
