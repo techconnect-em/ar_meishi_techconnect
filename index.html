@@ -37,9 +37,12 @@
         <img id="intro-name" src="./assets/intro_name.png" />
         <img id="intro-job" src="./assets/intro_job.png" />
         <img id="intro-catch" src="./assets/intro_catch.png" />
+        <!-- Icons -->
+        <img id="icon-instagram" src="./assets/icon_instagram.png" />
       </a-assets>
 
-      <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+      <a-camera position="0 0 0" look-controls="enabled: false" cursor="fuse: false; rayOrigin: mouse;"
+        raycaster="far: 10000; objects: .clickable"></a-camera>
 
       <a-entity mindar-image-target="targetIndex: 0">
 
@@ -64,33 +67,69 @@
           <!-- Initially invisible. Appears below header logo. -->
           <!-- Moved higher for vertical stack. -->
           <a-entity id="intro-container" position="0 0.1 0.05" opacity="0"
-            animation__fade="property: opacity; to: 1; dur: 1000; easing: linear; startEvents: showIntro"
-            animation__float="property: position; to: 0 0.15 0.05; dur: 2000; dir: alternate; loop: true; easing: easeInOutSine; startEvents: showIntro">
+            animation__fade="property: opacity; to: 1; dur: 1000; easing: linear; startEvents: showIntro">
 
             <!-- 1. Catchphrase (Top) -->
             <!-- Aspect Ratio 1075:650 ~= 1.65 -->
-            <a-image src="#intro-catch" position="0 0.65 0" width="1.2" height="0.72" opacity="0"
+            <!-- Float: y 0.65 -> 0.7, z 0.02 -->
+            <a-image src="#intro-catch" position="0 0.65 0.02" width="1.2" height="0.72" opacity="0"
               material="transparent: true; alphaTest: 0.1"
-              animation="property: opacity; to: 1; dur: 1000; startEvents: showIntro">
+              animation="property: opacity; to: 1; dur: 800; delay: 1300; startEvents: showIntro"
+              animation__float="property: position; to: 0 0.7 0.02; dur: 2000; dir: alternate; loop: true; easing: easeInOutSine; delay: 2000; startEvents: showIntro">
             </a-image>
 
             <!-- 2. Job Title (Below Catch) -->
-            <a-image src="#intro-job" position="0 0.45 0" width="1.2" height="0.72" opacity="0"
+            <!-- Grouped with Name for "Lastly" appearance -->
+            <!-- Float: y 0.45 -> 0.5, z 0.02 -->
+            <a-image src="#intro-job" position="0 0.45 0.02" width="1.2" height="0.72" opacity="0"
               material="transparent: true; alphaTest: 0.1"
-              animation="property: opacity; to: 1; dur: 1000; delay: 200; startEvents: showIntro">
+              animation="property: opacity; to: 1; dur: 800; delay: 1300; startEvents: showIntro"
+              animation__float="property: position; to: 0 0.5 0.02; dur: 2000; dir: alternate; loop: true; easing: easeInOutSine; delay: 2200; startEvents: showIntro">
             </a-image>
 
             <!-- 3. Profile Photo (Center) - Larger -->
-            <a-circle src="#intro-profile" position="0 0.1 0" radius="0.25" opacity="0"
-              animation="property: opacity; to: 1; dur: 1000; delay: 400; startEvents: showIntro">
+            <!-- Pop up scaling (Slower: 1200ms) -->
+            <!-- Float: y 0.1 -> 0.15, z 0.05 (Most forward) -->
+            <a-circle src="#intro-profile" position="0 0.1 0.05" radius="0.25" scale="0 0 0" opacity="1"
+              animation="property: scale; to: 1 1 1; dur: 1200; delay: 1800; easing: easeOutElastic; startEvents: showIntro"
+              animation__float="property: position; to: 0 0.15 0.05; dur: 2000; dir: alternate; loop: true; easing: easeInOutSine; delay: 2400; startEvents: showIntro">
             </a-circle>
 
             <!-- 4. Name (Bottom) -->
-            <a-image src="#intro-name" position="0 -0.25 0" width="1.2" height="0.72" opacity="0"
+            <!-- Appears smoothly at the end -->
+            <!-- Float: y -0.25 -> -0.2, z 0.02 -->
+            <a-image src="#intro-name" position="0 -0.25 0.02" width="1.2" height="0.72" opacity="0"
               material="transparent: true; alphaTest: 0.1"
-              animation="property: opacity; to: 1; dur: 1000; delay: 600; startEvents: showIntro">
+              animation="property: opacity; to: 1; dur: 1000; delay: 2100; startEvents: showIntro"
+              animation__float="property: position; to: 0 -0.2 0.02; dur: 2000; dir: alternate; loop: true; easing: easeInOutSine; delay: 2600; startEvents: showIntro">
             </a-image>
 
+          </a-entity>
+
+          <!-- Instagram Button (Glassmorphism) -->
+          <!-- Appears at the bottom -->
+          <!-- Moved closer to card: y = -0.45 -->
+          <a-entity id="btn-instagram" position="0 -0.45 0.05" scale="0 0 0" class="clickable"
+            animation="property: scale; to: 1 1 1; dur: 1000; delay: 3000; easing: easeOutElastic; startEvents: showIntro"
+            animation__float="property: position; to: 0 -0.4 0.05; dur: 2000; dir: alternate; loop: true; easing: easeInOutSine; delay: 3000; startEvents: showIntro">
+
+            <!-- Glass Background (Circle) -->
+            <a-circle radius="0.15" color="#ffffff" opacity="0.1" position="0 0 0"
+              material="transparent: true; shader: flat; side: double">
+            </a-circle>
+
+            <!-- Border (Neon Ring) -->
+            <!-- Using Cyan #00ffff for neon look with emissive glow -->
+            <a-ring radius-inner="0.15" radius-outer="0.155" color="#00ffff" opacity="0.8" position="0 0 0"
+              material="transparent: true; shader: standard; emissive: #00ffff; emissiveIntensity: 2; side: double">
+            </a-ring>
+            <!-- Outer Glow (Faint Ring) -->
+            <a-ring radius-inner="0.155" radius-outer="0.165" color="#00ffff" opacity="0.3" position="0 0 -0.001"
+              material="transparent: true; shader: flat; side: double">
+            </a-ring>
+
+            <!-- Icon -->
+            <a-image src="#icon-instagram" position="0 0 0.01" width="0.15" height="0.15" transparent="true"></a-image>
           </a-entity>
 
           <!-- Cover Container (Pivot at Top Edge: y = 0.3) -->
