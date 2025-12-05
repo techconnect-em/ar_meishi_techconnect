@@ -4,12 +4,34 @@ document.addEventListener("DOMContentLoaded", function () {
   const logoVideo = document.querySelector('#logo-video');
   const introContainer = document.querySelector('#intro-container');
   const btnInstagram = document.querySelector('#btn-instagram');
+  const btnWebsite = document.querySelector('#btn-website');
+  const btnPortfolio = document.querySelector('#btn-portfolio');
   const target = document.querySelector('[mindar-image-target]');
+  const portfolioPanel = document.querySelector('#portfolio-panel');
+  const closePortfolioBtn = document.querySelector('#btn-close-portfolio');
 
   // Instagram Button Click
   btnInstagram.addEventListener('click', () => {
     console.log("Instagram button clicked");
     window.open('https://www.instagram.com/techconnect.em/', '_blank');
+  });
+
+  // Website Button Click
+  btnWebsite.addEventListener('click', () => {
+    console.log("Website button clicked");
+    window.open('https://techconnect-em.com', '_blank');
+  });
+
+  // Portfolio Button Click - Show Hologram Panel
+  btnPortfolio.addEventListener('click', () => {
+    console.log("Portfolio button clicked");
+    portfolioPanel.setAttribute('scale', '1 1 1');
+  });
+
+  // Close Portfolio Hologram Panel
+  closePortfolioBtn.addEventListener('click', () => {
+    console.log("Close portfolio clicked");
+    portfolioPanel.setAttribute('scale', '0 0 0');
   });
 
   target.addEventListener("targetFound", event => {
@@ -38,8 +60,10 @@ document.addEventListener("DOMContentLoaded", function () {
       introContainer.emit('showIntro');
       introContainer.querySelectorAll('*').forEach(el => el.emit('showIntro'));
 
-      // Show Instagram Button
+      // Show Instagram & Website Button & Portfolio
       btnInstagram.emit('showIntro');
+      btnWebsite.emit('showIntro');
+      btnPortfolio.emit('showIntro');
     }, 7300);
   });
 
