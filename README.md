@@ -42,17 +42,6 @@ ar_meishi_techconnect/
 └── README.md
 ```
 
-## ローカル開発
-
-```bash
-# サーバー起動
-npx http-server . -c-1
-
-# ブラウザでアクセス
-# Local: http://127.0.0.1:8080
-# スマホ: http://<your-ip>:8080
-```
-
 ## 使用方法
 
 1. スマートフォンでURLにアクセス
