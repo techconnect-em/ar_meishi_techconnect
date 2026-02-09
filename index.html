@@ -38,18 +38,20 @@
       device-orientation-permission-ui="enabled: false">
 
       <a-assets timeout="30000">
-        <!-- 必須アセット（即時読み込み） -->
         <img id="card-front" src="./assets/meishi_front.png" />
-        <!-- 遅延読み込みアセット（プレースホルダー） -->
-        <img id="card-inside" />
-        <video id="logo-video" crossorigin="anonymous" playsinline webkit-playsinline muted></video>
-        <img id="intro-profile" />
-        <img id="intro-name" />
-        <img id="intro-job" />
-        <img id="intro-catch" />
-        <img id="icon-instagram" />
-        <img id="icon-website" />
-        <img id="icon-portfolio" />
+        <img id="card-inside" src="./assets/meishi_inside.png" />
+        <!-- Video Asset -->
+        <video id="logo-video" src="./assets/logoanimation.mp4" crossorigin="anonymous" playsinline webkit-playsinline
+          muted></video>
+        <!-- Intro Assets -->
+        <img id="intro-profile" src="./assets/intro_profile.jpg" />
+        <img id="intro-name" src="./assets/intro_name.png" />
+        <img id="intro-job" src="./assets/intro_job.png" />
+        <img id="intro-catch" src="./assets/intro_catch.png" />
+        <!-- Icons -->
+        <img id="icon-instagram" src="./assets/icon_instagram.png" />
+        <img id="icon-website" src="./assets/icon_website.png" />
+        <img id="icon-portfolio" src="./assets/icon_potfolio.png" />
       </a-assets>
 
       <a-camera position="0 0 0" look-controls="enabled: false" cursor="fuse: false; rayOrigin: mouse;"
