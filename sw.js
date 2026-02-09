@@ -1,6 +1,6 @@
 // Service Worker for AR Meishi TechConnect
 // キャッシュバージョン - 更新時はこの番号を変更
-const CACHE_VERSION = 'v1';
+const CACHE_VERSION = 'v2';
 const CACHE_NAME = `ar-meishi-cache-${CACHE_VERSION}`;
 
 // キャッシュするファイル一覧
