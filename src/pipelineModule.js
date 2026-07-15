@@ -484,14 +484,28 @@ export function meishiPipelineModule(markerTarget) {
     jobImg.position.set(0, 0.45, 0.02);
     introContainer.add(jobImg);
 
-    // 写真は可読性優先: 色収差なし・走査線ごく弱く（滲み演出は写真を不鮮明に見せるため）
+    // 写真は顔が命: エフェクト完全ゼロ（出現スイープのみ）。
+    // ホログラム感は縁のシアンリングで担保する
     const profile = new THREE.Mesh(
       new THREE.CircleGeometry(0.25, 64),
-      holoMat(loadTex('./assets/intro_profile.jpg'), { boot: 0, tint: 0.04, scan: 0.02, chroma: 0, flicker: 0.02 })
+      holoMat(loadTex('./assets/intro_profile.jpg'), { boot: 0, tint: 0, scan: 0, chroma: 0, flicker: 0 })
     );
     profile.position.set(0, 0.1, 0.05);
     if (!FX.hologram) profile.scale.setScalar(0); // フォールバック時は旧来のポップイン
     introContainer.add(profile);
+
+    const profileRing = new THREE.Mesh(
+      new THREE.RingGeometry(0.252, 0.262, 64),
+      new THREE.MeshBasicMaterial({
+        color: 0x4de8e0,
+        transparent: true,
+        opacity: 0,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
+      })
+    );
+    profileRing.position.z = 0.001;
+    profile.add(profileRing); // 子にして浮遊アニメーションに追従させる
 
     const nameImg = holoPlane('./assets/intro_name.png', 1.2, 0.72, { boot: 0, alphaTest: 0.1 });
     nameImg.position.set(0, -0.25, 0.02);
@@ -564,6 +578,8 @@ export function meishiPipelineModule(markerTarget) {
     } else {
       tweens.push({ start: INTRO + 1.8, dur: 1.2, ease: easeOutElastic, apply: (prog) => { profile.scale.setScalar(prog); } });
     }
+    // 縁のシアンリングは写真の構築完了に合わせてフェードイン
+    tweens.push({ start: INTRO + 2.2, dur: 0.6, ease: linear, apply: (prog) => { profileRing.material.opacity = 0.55 * prog; } });
 
     // 認識瞬間のリングパルス（1回のみ）
     if (FX.ring) {
