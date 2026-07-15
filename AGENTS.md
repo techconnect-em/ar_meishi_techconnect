@@ -8,7 +8,10 @@
   - 旧構成（MindAR + A-Frame + Service Worker）から2026年7月に移行済み
 - **ホスティング**: GitHub Pages（GitHub Actionsでビルド＆デプロイ、`.github/workflows/deploy.yml`）
 - **主要ファイル**:
-  - `src/pipelineModule.js` - ARシーン本体（アニメーションのタイムライン・タップ処理）
+  - `src/pipelineModule.js` - ARシーン本体（アニメーションのタイムライン・タップ処理）。
+    先頭の `FX` フラグでホログラム・パーティクル等の演出を個別ON/OFFできる（実機で重い場合の切り分け用）
+  - `src/hologram.js` - ホログラム質感シェーダー（走査線・起動スイープ・回路グリッド）
+  - `src/particles.js` - GPUパーティクル（開封バースト・光塵。位置計算は全てシェーダー内）
   - `src/main.js` - AR初期化
   - `public/xr/`, `public/xrextras/` - 8th Wall SDK（**編集禁止**。更新は参照プロジェクトからコピー）
   - `public/image-targets/` - マーカーデータ（`scripts/generate-marker.mjs` で生成）
