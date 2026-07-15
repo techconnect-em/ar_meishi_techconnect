@@ -73,9 +73,23 @@ export function meishiPipelineModule(markerTarget) {
   // インタラクション
   let interactables = []; // レイキャスト対象
   let portfolioPanel = null;
-  let panelParts = null; // { bg, glow, text, closeBtn }
+  let panelParts = null; // { bg, glow, caption, videoMesh, videoGlow, closeBtn }
   let videoEl = null;
   let videoTexture = null;
+
+  // ポートフォリオ動画（選んだときに初めて読み込む = 通信量節約）
+  const PF_ITEMS = [
+    { src: './assets/portfolio/ar-flyer-01.mp4', title: 'ARフライヤー' },
+    { src: './assets/portfolio/ar-cd-acopa-01.mp4', title: 'AR CDジャケット' },
+    { src: './assets/portfolio/aeonmall-toyokawa-signage-01.mp4', title: 'ARサイネージ（イオンモール豊川）' },
+    { src: './assets/portfolio/ar-art-jellyfish-01.mp4', title: 'ARアート「クラゲ」' },
+    { src: './assets/portfolio/otowa-kabuki-01.mp4', title: 'AR歌舞伎（音羽歌舞伎座）' },
+  ];
+  let pfVideo = null;
+  let pfVideoTex = null;
+  let pfIndex = 0;
+  let pfCaptionCtx = null;
+  let pfCaptionTex = null;
 
   const raycaster = new THREE.Raycaster();
   const pointer = new THREE.Vector2();
@@ -90,6 +104,8 @@ export function meishiPipelineModule(markerTarget) {
   const loadTex = (url) => {
     const tex = loader.load(url);
     tex.colorSpace = THREE.SRGBColorSpace;
+    // 異方性フィルタリング: 斜めから見たときのボケを抑える（写真の鮮明さに効く）
+    tex.anisotropy = renderer ? renderer.capabilities.getMaxAnisotropy() : 8;
     return tex;
   };
 
@@ -214,30 +230,85 @@ export function meishiPipelineModule(markerTarget) {
     glow.position.z = -0.001;
     panel.add(glow);
 
-    // テキスト（タイトル + 実績リスト）
-    const textTex = makeTextTexture((ctx, w, h) => {
-      ctx.clearRect(0, 0, w, h);
-      ctx.textBaseline = 'middle';
-      // タイトル
-      ctx.fillStyle = '#00ffff';
-      ctx.font = 'bold 60px "Helvetica Neue", Arial, sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText('Production Results', w / 2, h * 0.15);
-      // リスト
-      ctx.fillStyle = '#ffffff';
-      ctx.font = '48px "Helvetica Neue", Arial, sans-serif';
-      ctx.textAlign = 'left';
-      const items = ['• AR Flyer', '• AR CD', '• AR Photo Frame', '• AR Dinosaur BOX'];
-      items.forEach((item, i) => {
-        ctx.fillText(item, w * 0.083, h * (0.35 + i * 0.15));
-      });
-    }, 1024, 854);
-    const text = new THREE.Mesh(
-      new THREE.PlaneGeometry(1.2, 1.0),
-      holoMat(textTex, { boot: 1, scan: 0.06 })
+    // キャプション（見出し + 実績タイトル + ページ番号。切替時にCanvasを描き直す）
+    {
+      const canvas = document.createElement('canvas');
+      canvas.width = 1024;
+      canvas.height = 200;
+      pfCaptionCtx = canvas.getContext('2d');
+      pfCaptionTex = new THREE.CanvasTexture(canvas);
+      pfCaptionTex.colorSpace = THREE.SRGBColorSpace;
+    }
+    const caption = new THREE.Mesh(
+      new THREE.PlaneGeometry(1.1, 0.215),
+      holoMat(pfCaptionTex, { boot: 1, scan: 0.04, chroma: 0 })
     );
-    text.position.z = 0.01;
-    panel.add(text);
+    caption.position.set(0, 0.375, 0.01);
+    panel.add(caption);
+
+    // 実演動画（読み込み時に実寸アスペクトへフィットさせる）
+    pfVideo = document.createElement('video');
+    pfVideo.muted = true;
+    pfVideo.playsInline = true;
+    pfVideo.loop = true;
+    pfVideo.setAttribute('playsinline', '');
+    pfVideo.setAttribute('webkit-playsinline', '');
+    pfVideo.preload = 'none';
+    pfVideoTex = new THREE.VideoTexture(pfVideo);
+    pfVideoTex.minFilter = THREE.LinearFilter;
+    pfVideoTex.magFilter = THREE.LinearFilter;
+    pfVideoTex.colorSpace = THREE.SRGBColorSpace;
+
+    const videoGlow = new THREE.Mesh(
+      new THREE.PlaneGeometry(1, 1),
+      new THREE.MeshBasicMaterial({ color: 0x00ffff, transparent: true, opacity: 0.18, side: THREE.DoubleSide })
+    );
+    videoGlow.position.set(0, -0.02, 0.005);
+    panel.add(videoGlow);
+
+    // 動画そのものは演出をかけず素のまま表示（内容の分かりやすさ優先）
+    const videoMesh = new THREE.Mesh(
+      new THREE.PlaneGeometry(1, 1),
+      new THREE.MeshBasicMaterial({ map: pfVideoTex, transparent: true })
+    );
+    videoMesh.position.set(0, -0.02, 0.01);
+    panel.add(videoMesh);
+
+    // 動画のアスペクト比に合わせて表示枠（最大 0.9×0.6）へフィット
+    pfVideo.addEventListener('loadedmetadata', () => {
+      const a = pfVideo.videoWidth / pfVideo.videoHeight;
+      const dw = Math.min(0.9, 0.6 * a);
+      const dh = dw / a;
+      videoMesh.scale.set(dw, dh, 1);
+      videoGlow.scale.set(dw + 0.025, dh + 0.025, 1);
+    });
+
+    // 前へ / 次へ ボタン
+    const navBtn = (label, x, action) => {
+      const tex = makeTextTexture((ctx, w, h) => {
+        ctx.clearRect(0, 0, w, h);
+        ctx.fillStyle = 'rgba(0, 255, 255, 0.25)';
+        ctx.beginPath();
+        ctx.arc(w / 2, h / 2, w / 2 - 4, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 72px "Helvetica Neue", Arial, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(label, w / 2, h / 2 - 4);
+      }, 128, 128);
+      const btn = new THREE.Mesh(
+        new THREE.PlaneGeometry(0.13, 0.13),
+        new THREE.MeshBasicMaterial({ map: tex, transparent: true })
+      );
+      btn.position.set(x, -0.02, 0.02);
+      btn.userData.action = action;
+      panel.add(btn);
+      interactables.push(btn);
+      return btn;
+    };
+    navBtn('‹', -0.52, 'pfPrev');
+    navBtn('›', 0.52, 'pfNext');
 
     // 閉じるボタン
     const closeTex = makeTextTexture((ctx, w, h) => {
@@ -258,27 +329,56 @@ export function meishiPipelineModule(markerTarget) {
     panel.add(closeBtn);
     interactables.push(closeBtn);
 
-    panelParts = { bg, glow, text, closeBtn };
+    panelParts = { bg, glow, caption, videoMesh, videoGlow, closeBtn };
     return panel;
+  };
+
+  // 指定インデックスの実績動画を読み込んで再生し、キャプションを描き直す
+  const loadPfItem = (i) => {
+    pfIndex = (i + PF_ITEMS.length) % PF_ITEMS.length;
+    const item = PF_ITEMS[pfIndex];
+    pfVideo.src = item.src;
+    pfVideo.play().catch((e) => console.warn('PF video play failed:', e));
+
+    const ctx = pfCaptionCtx;
+    const { width: w, height: h } = ctx.canvas;
+    ctx.clearRect(0, 0, w, h);
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#00ffff';
+    ctx.font = '30px "Helvetica Neue", Arial, sans-serif';
+    ctx.fillText('- Production Results -', w / 2, 30);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 54px "Hiragino Sans", "Helvetica Neue", Arial, sans-serif';
+    ctx.fillText(item.title, w / 2, 100);
+    ctx.fillStyle = '#8feeea';
+    ctx.font = '34px "Helvetica Neue", Arial, sans-serif';
+    ctx.fillText(`${pfIndex + 1} / ${PF_ITEMS.length}`, w / 2, 165);
+    pfCaptionTex.needsUpdate = true;
   };
 
   const openPortfolio = () => {
     portfolioPanel.scale.setScalar(1);
-    if (!FX.hologram) return;
-    const { bg, glow, text, closeBtn } = panelParts;
-    // 背景・グロー・Closeはフェード、本文は走査スイープで構築
+    loadPfItem(pfIndex);
+    const { bg, glow, caption, videoMesh, videoGlow, closeBtn } = panelParts;
+    // 背景・グロー・動画・Closeはフェード、キャプションは走査スイープで構築
     addLiveTween(0.3, linear, (prog) => {
       bg.material.opacity = 0.7 * prog;
       glow.material.opacity = 0.3 * prog;
+      videoMesh.material.opacity = prog;
+      videoGlow.material.opacity = 0.18 * prog;
       closeBtn.material.opacity = prog;
     });
-    addLiveTween(0.5, linear, (prog) => {
-      text.material.uniforms.uBoot.value = prog;
-    });
+    if (caption.material.uniforms) {
+      addLiveTween(0.5, linear, (prog) => {
+        caption.material.uniforms.uBoot.value = prog;
+      });
+    }
   };
 
   const closePortfolio = () => {
     portfolioPanel.scale.setScalar(0);
+    pfVideo.pause();
   };
 
   // ─── タップ処理 ─────────────────────────────────────────────────────────
@@ -300,6 +400,10 @@ export function meishiPipelineModule(markerTarget) {
       openPortfolio();
     } else if (action === 'closePortfolio') {
       closePortfolio();
+    } else if (action === 'pfPrev') {
+      loadPfItem(pfIndex - 1);
+    } else if (action === 'pfNext') {
+      loadPfItem(pfIndex + 1);
     }
   };
 
@@ -380,9 +484,10 @@ export function meishiPipelineModule(markerTarget) {
     jobImg.position.set(0, 0.45, 0.02);
     introContainer.add(jobImg);
 
+    // 写真は可読性優先: 色収差なし・走査線ごく弱く（滲み演出は写真を不鮮明に見せるため）
     const profile = new THREE.Mesh(
       new THREE.CircleGeometry(0.25, 64),
-      holoMat(loadTex('./assets/intro_profile.jpg'), { boot: 0, tint: 0.08, scan: 0.04 })
+      holoMat(loadTex('./assets/intro_profile.jpg'), { boot: 0, tint: 0.04, scan: 0.02, chroma: 0, flicker: 0.02 })
     );
     profile.position.set(0, 0.1, 0.05);
     if (!FX.hologram) profile.scale.setScalar(0); // フォールバック時は旧来のポップイン
@@ -571,6 +676,9 @@ export function meishiPipelineModule(markerTarget) {
 
       if (videoTexture && videoEl && !videoEl.paused) {
         videoTexture.needsUpdate = true;
+      }
+      if (pfVideoTex && pfVideo && !pfVideo.paused) {
+        pfVideoTex.needsUpdate = true;
       }
     },
 

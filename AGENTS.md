@@ -15,6 +15,8 @@
   - `src/main.js` - AR初期化
   - `public/xr/`, `public/xrextras/` - 8th Wall SDK（**編集禁止**。更新は参照プロジェクトからコピー）
   - `public/image-targets/` - マーカーデータ（`scripts/generate-marker.mjs` で生成）
+  - `public/assets/portfolio/` - ポートフォリオパネルの実績動画（`~/ar_lp/assets/制作実績/` からコピー。
+    追加時は `pipelineModule.js` の `PF_ITEMS` にも1行追加する）
 
 ## 🚨 注意事項
 

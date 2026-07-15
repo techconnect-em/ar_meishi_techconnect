@@ -80,7 +80,7 @@ export function createHologramMaterial(texture, opts = {}) {
     boot = 1,          // 初期スイープ状態（0=非表示から起動、1=最初から表示）
     scan = 0.05,
     flicker = 0.03,
-    chroma = 0.0015,
+    chroma = 0.0008,
     tint = 0.12,
     additive = false,  // 動画ロゴ用: 黒背景を「光」として消す
   } = opts;
