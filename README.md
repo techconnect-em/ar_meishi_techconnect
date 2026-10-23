@@ -38,7 +38,7 @@ ar_meishi_techconnect/
 ├── public/
 │   ├── xr/                     # 8th Wall SDK（ビルド済み）
 │   ├── xrextras/               # 8th Wall UI/UXモジュール
-│   ├── image-targets/          # マーカーデータ（meishi_front.png から生成）
+│   ├── image-targets/          # マーカーデータ（marker-source/meishi_front.png から生成）
 │   ├── sw.js                   # 旧Service Worker解除用キルスイッチ
 │   └── assets/                 # 画像・動画
 └── .github/workflows/deploy.yml # GitHub Pages自動デプロイ
@@ -55,7 +55,7 @@ npm run dev   # https://localhost:5173（スマホからはネットワークURL
 
 ```bash
 npm install --no-save sharp
-node scripts/generate-marker.mjs public/assets/meishi_front.png public/image-targets marker
+node scripts/generate-marker.mjs marker-source/meishi_front.png public/image-targets marker
 ```
 
 ## デプロイ

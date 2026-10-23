@@ -41,7 +41,7 @@ const easeOutElastic = (t) => {
 };
 const linear = (t) => t;
 
-export function meishiPipelineModule(markerTarget) {
+export function meishiPipelineModule(markerTarget, slamReady) {
   let targetGroup = null;
   let clock = null;
   let renderer = null;
@@ -447,7 +447,10 @@ export function meishiPipelineModule(markerTarget) {
 
     // ロゴ動画（加算合成 = 黒背景が消えて光として浮くホログラム）
     videoEl = document.createElement('video');
-    videoEl.src = './assets/logoanimation.mp4';
+    // 大きい動画で追跡エンジンの通信を妨げない。演出の開始時刻は変えない。
+    slamReady.then((ready) => {
+      if (ready) videoEl.src = './assets/logoanimation.mp4';
+    });
     videoEl.muted = true;
     videoEl.playsInline = true;
     videoEl.setAttribute('playsinline', '');
@@ -476,11 +479,11 @@ export function meishiPipelineModule(markerTarget) {
     introContainer.position.set(0, 0.1, 0.05);
     contentRoot.add(introContainer);
 
-    const catchImg = holoPlane('./assets/intro_catch.png', 1.2, 0.72, { boot: 0, alphaTest: 0.1 });
+    const catchImg = holoPlane('./assets/intro_catch.webp', 1.2, 0.72, { boot: 0, alphaTest: 0.1 });
     catchImg.position.set(0, 0.65, 0.02);
     introContainer.add(catchImg);
 
-    const jobImg = holoPlane('./assets/intro_job.png', 1.2, 0.72, { boot: 0, alphaTest: 0.1 });
+    const jobImg = holoPlane('./assets/intro_job.webp', 1.2, 0.72, { boot: 0, alphaTest: 0.1 });
     jobImg.position.set(0, 0.45, 0.02);
     introContainer.add(jobImg);
 
@@ -507,20 +510,20 @@ export function meishiPipelineModule(markerTarget) {
     profileRing.position.z = 0.001;
     profile.add(profileRing); // 子にして浮遊アニメーションに追従させる
 
-    const nameImg = holoPlane('./assets/intro_name.png', 1.2, 0.72, { boot: 0, alphaTest: 0.1 });
+    const nameImg = holoPlane('./assets/intro_name.webp', 1.2, 0.72, { boot: 0, alphaTest: 0.1 });
     nameImg.position.set(0, -0.25, 0.02);
     introContainer.add(nameImg);
 
     // リンクボタン（Website / Instagram / Portfolio）
-    const btnWebsite = makeButton('./assets/icon_website.png', 0.15, 'website');
+    const btnWebsite = makeButton('./assets/icon_website.webp', 0.15, 'website');
     btnWebsite.position.set(-0.35, -0.45, 0.05);
     contentRoot.add(btnWebsite);
 
-    const btnInstagram = makeButton('./assets/icon_instagram.png', 0.15, 'instagram');
+    const btnInstagram = makeButton('./assets/icon_instagram.webp', 0.15, 'instagram');
     btnInstagram.position.set(0, -0.45, 0.05);
     contentRoot.add(btnInstagram);
 
-    const btnPortfolio = makeButton('./assets/icon_potfolio.png', 0.25, 'portfolio');
+    const btnPortfolio = makeButton('./assets/icon_potfolio.webp', 0.25, 'portfolio');
     btnPortfolio.position.set(0.35, -0.45, 0.05);
     contentRoot.add(btnPortfolio);
 
@@ -541,7 +544,7 @@ export function meishiPipelineModule(markerTarget) {
     coverPivot.position.set(0, CARD_H / 2, 0);
     contentRoot.add(coverPivot);
 
-    const coverFront = imagePlane('./assets/meishi_front.png', CARD_W, CARD_H);
+    const coverFront = imagePlane('./assets/meishi_front.webp', CARD_W, CARD_H);
     coverFront.material.transparent = false;
     coverFront.position.set(0, -CARD_H / 2, 0.01);
     coverPivot.add(coverFront);
@@ -615,14 +618,20 @@ export function meishiPipelineModule(markerTarget) {
   };
 
   // ─── pipeline module ──────────────────────────────────────────────────
+  const startScene = () => {
+    // 起動後に追加されたモジュールにも呼ばれるonAttachで構築する。
+    // カメラ起動前に追加された場合は、続くonStartで二重に構築しない。
+    if (targetGroup) return;
+    const xr = XR8.Threejs.xrScene();
+    renderer = xr.renderer;
+    buildScene(xr.scene);
+  };
+
   return {
     name: 'ar-meishi',
 
-    onStart: () => {
-      const xr = XR8.Threejs.xrScene();
-      renderer = xr.renderer;
-      buildScene(xr.scene);
-    },
+    onAttach: startScene,
+    onStart: startScene,
 
     onUpdate: () => {
       if (!clock) return;

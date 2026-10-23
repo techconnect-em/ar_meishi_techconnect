@@ -2,12 +2,15 @@
  * Custom loading screen — Tech Connect branding.
  * Replaces XRExtras.Loading.pipelineModule().
  */
+let activeLoading = null;
+
 export const customLoading = {
+  showLoadError: () => activeLoading?.showLoadError(),
+  hasFailed: () => activeLoading?.hasFailed() ?? false,
   pipelineModule: () => {
     let loadingEl = null;
     let hintEl = null;
     let footerEl = null;
-    let loadingStyleEl = null;
     let inAppTimer = null;
     let hintTimer = null;
     let fadeTimer = null;
@@ -56,51 +59,24 @@ export const customLoading = {
 
     const ensureOverlay = () => {
       if (loadingEl) return;
+      loadingEl = document.getElementById('tc-loading');
+      if (loadingEl) return;
       loadingEl = document.createElement('div');
-      Object.assign(loadingEl.style, {
-        position: 'fixed',
-        inset: '0',
-        zIndex: '9999',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'flex-start',
-        padding: '12vh 24px 28px',
-        overflowY: 'auto',
-        backgroundColor: '#1c2f56',
-        fontFamily: "'Helvetica Neue', Arial, sans-serif",
-        color: '#f6f6f6',
-        gap: '28px',
-        boxSizing: 'border-box',
-      });
+      loadingEl.id = 'tc-loading';
+      loadingEl.className = 'tc-loading';
       document.body.appendChild(loadingEl);
     };
 
     const createLogo = () => {
       const logo = document.createElement('div');
-      Object.assign(logo.style, {
-        fontSize: '28px',
-        fontWeight: 'bold',
-        letterSpacing: '0.5px',
-        flexShrink: '0',
-      });
-      logo.innerHTML = '<span style="color:#f6f6f6">Tech</span><span style="color:#4de8e0"> Connect</span>';
+      logo.className = 'tc-logo';
+      logo.innerHTML = '<span>Tech</span><span> Connect</span>';
       return logo;
     };
 
     const createFooter = (text) => {
       const footer = document.createElement('div');
-      Object.assign(footer.style, {
-        marginTop: 'auto',
-        flexShrink: '0',
-        maxWidth: '100%',
-        fontSize: '11px',
-        lineHeight: '1.5',
-        textAlign: 'center',
-        overflowWrap: 'anywhere',
-        color: '#4a6080',
-        letterSpacing: '0.2px',
-      });
+      footer.className = 'tc-footer';
       footer.textContent = text;
       return footer;
     };
@@ -197,8 +173,16 @@ export const customLoading = {
       cameraFailed = true;
       clearCameraTimers();
       clearUiTimers();
-      XR8.pause();
-      XR8.stop();
+      const xr = window.XR8;
+      if (xr) {
+        const stopCamera = () => {
+          xr.pause();
+          xr.stop();
+        };
+        // 即座に許可を拒否すると、SDKのWebGL初期化より先にここへ来る。
+        // 初期化中のコンテキストを破棄しないよう、停止だけ完了後に回す。
+        xr.initialize().then(stopCamera, stopCamera);
+      }
       if (removed) return;
 
       // onStartのフェード途中・終了後でも、失敗画面を前面に残す。
@@ -217,7 +201,11 @@ export const customLoading = {
       Object.assign(actions.style, { display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '24px' });
 
       let paragraphs;
-      if (screen === 'inApp') {
+      if (screen === 'load') {
+        heading.textContent = '読み込みに失敗しました';
+        paragraphs = ['通信状況を確認して、もう一度読み込んでください。'];
+        actions.appendChild(createButton('再読み込み', () => location.reload()));
+      } else if (screen === 'inApp') {
         heading.textContent = 'ブラウザで開いてください';
         paragraphs = ['このアプリ内の画面ではカメラを使えません。右上のメニュー（︙ や …）から「ブラウザで開く」を選んでください。'];
         const isAndroid = est.os === 'Android' || (!est.os && navigator.userAgent.includes('Android'));
@@ -257,110 +245,24 @@ export const customLoading = {
       loadingEl.appendChild(footerEl);
     };
 
+    activeLoading = {
+      showLoadError: () => showCameraError('load', 'LOAD_FAILED', getDeviceEstimate()),
+      hasFailed: () => cameraFailed || removed,
+    };
+
     return {
       name: 'custom-loading',
 
       onBeforeRun: () => {
+        if (cameraFailed) return;
         clearCameraTimers();
         clearUiTimers();
-        loadingEl?.remove();
-        loadingEl = null;
         hintEl = null;
-        cameraFailed = false;
         removed = false;
 
-        // アニメーション用のスタイルは一度だけ追加する。
-        if (!document.getElementById('tc-loading-style')) {
-          const style = document.createElement('style');
-          style.id = 'tc-loading-style';
-          style.textContent = `
-            @keyframes tc-bounce {
-              0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
-              40%            { transform: translateY(-10px); opacity: 1; }
-            }
-            .tc-dot {
-              width: 10px;
-              height: 10px;
-              border-radius: 50%;
-              background: #4de8e0;
-              animation: tc-bounce 1.4s ease-in-out infinite;
-            }
-            .tc-dot:nth-child(2) { animation-delay: 0.2s; }
-            .tc-dot:nth-child(3) { animation-delay: 0.4s; }
-          `;
-          document.head.appendChild(style);
-          loadingStyleEl = style;
-        }
-
+        // 初回表示の静的HTMLをそのまま使う。ロゴや手順を二重に作らない。
         ensureOverlay();
-
-        // ロード中のドット。
-        const dotsWrap = document.createElement('div');
-        Object.assign(dotsWrap.style, { display: 'flex', gap: '10px', flexShrink: '0' });
-        for (let i = 0; i < 3; i++) {
-          const dot = document.createElement('div');
-          dot.className = 'tc-dot';
-          dotsWrap.appendChild(dot);
-        }
-
-        // 区切り線。
-        const divider = document.createElement('div');
-        Object.assign(divider.style, {
-          width: '200px',
-          height: '1px',
-          backgroundColor: '#2e4570',
-          flexShrink: '0',
-        });
-
-        // カメラ起動から読み取りまでの手順。
-        const guide = document.createElement('div');
-        Object.assign(guide.style, {
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '12px',
-          textAlign: 'left',
-          maxWidth: '100%',
-          flexShrink: '0',
-        });
-
-        const steps = [
-          'カメラへのアクセスを許可してください',
-          '名刺にスマホをかざしてください',
-        ];
-        steps.forEach((text, i) => {
-          const row = document.createElement('div');
-          Object.assign(row.style, { display: 'flex', alignItems: 'baseline', gap: '10px' });
-
-          const num = document.createElement('span');
-          Object.assign(num.style, {
-            color: '#4de8e0',
-            fontWeight: 'bold',
-            fontSize: '16px',
-            flexShrink: '0',
-          });
-          num.textContent = `${['①', '②'][i]}`;
-
-          const label = document.createElement('span');
-          Object.assign(label.style, {
-            fontSize: '16px',
-            color: 'rgba(246,246,246,0.7)',
-            lineHeight: '1.5',
-          });
-          label.textContent = text;
-
-          row.appendChild(num);
-          row.appendChild(label);
-          guide.appendChild(row);
-        });
-
-        // 下部のヒントや診断情報と重ならないよう、フッターも通常の配置にする。
-        footerEl = createFooter('Powered by Tech Connect');
-
-        loadingEl.appendChild(createLogo());
-        loadingEl.appendChild(dotsWrap);
-        loadingEl.appendChild(divider);
-        loadingEl.appendChild(guide);
-        loadingEl.appendChild(footerEl);
+        footerEl = loadingEl.querySelector('.tc-footer');
       },
 
       onCameraStatusChange: ({ status, reason }) => {
@@ -398,6 +300,7 @@ export const customLoading = {
 
       onStart: () => {
         if (removed || cameraFailed || !loadingEl) return;
+        document.getElementById('scan-overlay').classList.remove('hidden');
         clearCameraTimers();
         clearUiTimers();
         loadingEl.style.transition = 'opacity 0.4s ease';
@@ -418,11 +321,9 @@ export const customLoading = {
         clearCameraTimers();
         clearUiTimers();
         loadingEl?.remove();
-        loadingStyleEl?.remove();
         loadingEl = null;
         hintEl = null;
         footerEl = null;
-        loadingStyleEl = null;
       },
     };
   },

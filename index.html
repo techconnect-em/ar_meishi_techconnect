@@ -5,17 +5,32 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>AR Meishi TechConnect</title>
     <link rel="stylesheet" href="./src/style.css" />
+    <link rel="preload" href="./image-targets/marker.json" as="fetch" crossorigin="anonymous" />
+    <link rel="preload" href="./image-targets/marker_luminance.jpg" as="image" crossorigin="anonymous" />
     <!-- data-cfasync="false": Cloudflare Rocket Loaderによる書き換えを防ぐ
          （書き換えられると xrloaded イベントが壊れてARが起動しない） -->
     <script src="./xrextras/xrextras.js" data-cfasync="false"></script>
-    <script async src="./xr/xr.js" data-preload-chunks="slam" data-cfasync="false"></script>
+    <script async src="./xr/xr.js" data-cfasync="false"></script>
   </head>
   <body>
     <canvas id="camerafeed"></canvas>
+    <!-- SDKの準備中も、最初から同じ起動画面を表示する。 -->
+    <div id="tc-loading" class="tc-loading">
+      <div class="tc-logo"><span>Tech</span><span> Connect</span></div>
+      <div class="tc-dots" aria-hidden="true">
+        <div class="tc-dot"></div><div class="tc-dot"></div><div class="tc-dot"></div>
+      </div>
+      <div class="tc-divider"></div>
+      <div class="tc-guide">
+        <div><span>①</span><span>カメラへのアクセスを許可してください</span></div>
+        <div><span>②</span><span>名刺にスマホをかざしてください</span></div>
+      </div>
+      <div class="tc-footer">Powered by Tech Connect</div>
+    </div>
     <!-- スキャンガイド: マーカー未認識のあいだ表示（認識したら非表示） -->
-    <div id="scan-overlay">
+    <div id="scan-overlay" class="hidden">
       <div class="scan-frame">
-        <img src="./assets/meishi_front.png" alt="名刺マーカー" />
+        <img src="./assets/meishi_front.webp" alt="名刺マーカー" />
         <div class="scan-line"></div>
       </div>
       <p class="scan-text">名刺にかざしてください</p>

@@ -20,7 +20,13 @@
 
 ## 🚨 注意事項
 
-- `src/main.js` の `window.THREE = THREE` は削除禁止（XR8のThree.jsモジュールが要求）
+- `src/main.js` の `window.THREE = THREE` は削除禁止（XR8のThree.jsモジュールが要求。three は動的importし、Threejsモジュール追加前に設定している）
+- **起動はカメラ先行方式**（2026-10に高速化）。`index.html` に `data-preload-chunks="slam"` を戻さない。
+  カメラ（GlTextureRenderer＋XRExtras＋customLoading）だけで先に `XR8.run` し、`XR8.loadChunk('slam')` 完了後に
+  XrController・Threejs・`meishiPipelineModule` を実行中のパイプラインへ後付けしている。
+  後付けではSDKが `onStart` / `onAppResourcesLoaded` を呼ばないため、`main.js` で XrController のライフサイクルを補っている（消さない）
+- 起動画面は `index.html` の静的な `#tc-loading` から表示し、`customLoading.js` が引き継ぐ。カメラ失敗時の案内もこのファイル
+- マーカー再生成の元画像は `marker-source/meishi_front.png`（`public/assets/` の画像はWebPで、マーカーには使わない）
 - パイプラインの `XRExtras.AlmostThere` / `FullWindowCanvas` / `RuntimeError` は常に残す
 - `index.html` のSDK読み込みタグの `data-cfasync="false"` を外さない（Cloudflare配信時の事故防止）
 - マーカー名（generate-marker.mjs の第3引数）と `pipelineModule.js` の `detail.name === 'marker'` 判定は一致させる
