@@ -97,7 +97,9 @@ const onxrloaded = () => {
       // 後付けではonStartも呼ばれない。Threejsが投影を設定する前に寸法を初期化する。
       // 回転時にSDKは orientation だけを更新するため、通常起動と同じく現在の向きを rotation にも渡す。
       if (!controllerStarted) controllerModule.onStart({ ...args, rotation: args.orientation ?? args.rotation });
-      attachController(args);
+      // セッション開始にも現在の向きを渡し、カメラ先行中の画面回転を反映する
+      // （XrController はここで rotation を使って追跡エンジンを初期化する）。
+      attachController({ ...args, rotation: args.orientation ?? args.rotation });
       // 実行中の追加ではonAppResourcesLoadedが再通知されない。
       // セッションへの接続後に、同じSDKフックでマーカー画像を初期化する。
       // カメラよりslamが先に準備できた場合の通常通知はSDK側で重複を防ぐ。
